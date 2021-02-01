@@ -1,1 +1,2 @@
-# szc188.github.io
+# www.szc188.com
+www.szc188.com
