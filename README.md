@@ -1,2 +1,2 @@
-# www.szc188.com
-www.szc188.com
+# szc188.com
+szc188.com
