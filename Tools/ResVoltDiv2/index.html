@@ -11,9 +11,9 @@
   <meta charset="utf-8">
 
   
-  <title>About - szc188</title>
+  <title>电阻串联分压 - szc188</title>
   
-  <link rel="canonical" href="https://blog.szc188.com/About/">
+  <link rel="canonical" href="https://blog.szc188.com/Tools/ResVoltDiv2/">
   
   <meta name="description" content="">
   
@@ -24,21 +24,21 @@
   
   <meta property="og:site_name" content="Zhichao&#39;s blog" />
   <meta property="og:type" content="article" />
-  <meta property="og:title" content="About - szc188" />
+  <meta property="og:title" content="电阻串联分压 - szc188" />
   
   <meta property="og:description" content="">
   
-  <meta property="og:url" content="https://blog.szc188.com/About/" />
+  <meta property="og:url" content="https://blog.szc188.com/Tools/ResVoltDiv2/" />
 
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="About - szc188">
+  <meta name="twitter:title" content="电阻串联分压 - szc188">
   
   <meta name="twitter:description" content="">
   
   
   <meta name="twitter:image" content="https://blog.szc188.comundefined">
   
-  <meta name="twitter:url" content="https://blog.szc188.com/About/" />
+  <meta name="twitter:url" content="https://blog.szc188.com/Tools/ResVoltDiv2/" />
 
   <!-- Mobile Specific Metas
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
@@ -179,7 +179,7 @@
           
         
           
-          <a href="/About" class="ml">About</a>
+          <a href="/Tools" class="ml">Tools</a>
           
         
           
@@ -199,9 +199,79 @@
 </div>
 
         <div class="trans">
-            <h2>About</h2>
+            <h2>电阻串联分压</h2>
 
-  <p>阿巴阿巴，作者很懒不想写</p>
+  <h3 id="输入任意三个值点击计算"><a class="markdownIt-Anchor" href="#输入任意三个值点击计算"></a> 输入任意三个值，点击计算</h3>
+<p><strong>输入电压 Vin:</strong>  <input maxlength="15" size="9" id="I"> <strong>V</strong><br />
+<strong>分压电阻 Ra:</strong>  <input maxlength="15" size="9" id="R1"> <strong>Ω</strong><br />
+<strong>分压电阻 Rb:</strong>  <input maxlength="15" size="9" id="R2"> <strong>Ω</strong><br />
+<strong>输入电压 Vout:</strong> <input maxlength="15" size="9" id="O"> <strong>V</strong></p>
+<input type="button" onclick="clc()" value="计算">
+&emsp;&emsp;&emsp;
+<input type="button" onclick="clr()" value="清除">
+<p><img src="/Tools/ResVoltDiv2/1.jpg" alt="1.jpg" /></p>
+<script>
+    function clc() {
+        if (isNaN(document.getElementById("I").value)) {
+            alert ("Enter value for Input Voltage")
+            document.getElementById("I").focus()
+            document.getElementById("I").select()
+            return false
+        }
+        if (isNaN(document.getElementById("R1").value)) {
+            alert ("Enter value for R1")
+            document.getElementById("R1").focus()
+            document.getElementById("R1").select()
+            return false
+        }
+        if (isNaN(document.getElementById("R2").value)) {
+            alert ("Enter value for R2")
+            document.getElementById("R2").focus()
+            document.getElementById("R2").select()
+            return false
+        }
+        if (isNaN(document.getElementById("O").value)) {
+            alert ("Enter value for Output Voltage")
+            document.getElementById("O").focus()
+            document.getElementById("O").select()
+            return false
+        }
+        I = parseFloat(document.getElementById("I").value)
+        R1 = parseFloat(document.getElementById("R1").value)
+        R2 = parseFloat(document.getElementById("R2").value) 
+        O = parseFloat(document.getElementById("O").value) 
+        if (document.getElementById("I").value == "" && document.getElementById("R1").value !="" && document.getElementById("R2").value!="" && document.getElementById("O").value!="") {
+            I = O * (R1 + R2) / R2
+            document.getElementById("I").value = Math.round(I * 1e3) / 1e3
+            return false
+        }
+        if (document.getElementById("R1").value == "" && document.getElementById("R2").value !="" && document.getElementById("I").value!="" && document.getElementById("O").value!="") {
+            R1 = (I * R2 / O) - R2
+            document.getElementById("R1").value = Math.round(R1 * 100) / 100
+            return false
+        }
+
+        if (document.getElementById("R2").value == "" && document.getElementById("R1").value !="" && document.getElementById("I").value!="" && document.getElementById("O").value!="") {
+            R2 = O * R1 / (I - O)
+            document.getElementById("R2").value = Math.round(R2 * 100) / 100
+            return false
+        }
+        if (document.getElementById("O").value == "" && document.getElementById("I").value !="" && document.getElementById("R1").value!="" && document.getElementById("R2").value!="") {
+            O = I * R2 / (R1 + R2)
+            document.getElementById("O").value = Math.round(O * 1e3) / 1e3
+            return false
+        }
+    }
+        
+    function clr() {
+        document.getElementById("I").value = ""
+        document.getElementById("R1").value = ""
+        document.getElementById("R2").value = ""	
+        document.getElementById("O").value = ""	
+        document.getElementById("I").focus()
+    }
+
+</script>
 
 
           <div class="row mt-2">
