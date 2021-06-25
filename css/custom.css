@@ -254,6 +254,12 @@ a.footer-link:focus {
 .stackoverflow {
   fill: #ca7516;
 }
+.wechat {
+  fill: #00940a;
+}
+.alipay {
+  fill: rgb(2, 126, 179)
+}
 .nanobar {
   left: 0;
 }
