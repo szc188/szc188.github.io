@@ -11,9 +11,9 @@
   <meta charset="utf-8">
 
   
-  <title>Tools - szc188</title>
+  <title>串口调试助手 - szc188</title>
   
-  <link rel="canonical" href="https://www.szc188.com/Tools/">
+  <link rel="canonical" href="https://www.szc188.com/Tools/SerialPortDb/">
   
   <meta name="description" content="">
   
@@ -24,21 +24,21 @@
   
   <meta property="og:site_name" content="Zhichao&#39;s blog" />
   <meta property="og:type" content="article" />
-  <meta property="og:title" content="Tools - szc188" />
+  <meta property="og:title" content="串口调试助手 - szc188" />
   
   <meta property="og:description" content="">
   
-  <meta property="og:url" content="https://www.szc188.com/Tools/" />
+  <meta property="og:url" content="https://www.szc188.com/Tools/SerialPortDb/" />
 
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Tools - szc188">
+  <meta name="twitter:title" content="串口调试助手 - szc188">
   
   <meta name="twitter:description" content="">
   
   
   <meta name="twitter:image" content="https://www.szc188.comundefined">
   
-  <meta name="twitter:url" content="https://www.szc188.com/Tools/" />
+  <meta name="twitter:url" content="https://www.szc188.com/Tools/SerialPortDb/" />
 
   <!-- Mobile Specific Metas
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
@@ -199,29 +199,234 @@
 </div>
 
         <div class="trans">
-            <h2>Tools</h2>
+            <h2>串口调试助手</h2>
 
-  <ol>
-<li><a href="/Tools/ResVoltDiv2">电阻串联分压</a><br />
-UI暂时比较简陋，后期会优化</li>
-<li><a href="/Tools/SerialPortDb">串口调试助手</a><br />
-功能和UI暂时比较简陋，暂时只支持1152008n1文本模式收发<br />
-将要添加的功能：
-<ul>
-<li>优化界面</li>
-<li>设置波特率、数据位、校验位、停止位</li>
-<li>切换十六进制模式和字符串模式</li>
-<li>清空发送缓冲区</li>
-<li>定时重复发送</li>
-<li>收发数据量统计、速率统计</li>
-<li>超时自动换行</li>
-<li>显示接收时间</li>
-<li>多发送框发送</li>
-<li>发送历史（基于Cookie，刷新页面保持）</li>
-<li>清空发送历史</li>
-</ul>
-</li>
-</ol>
+  <h3 id="连接状态font-idconnectstatus-size3-colorred不支持font"><a class="markdownIt-Anchor" href="#连接状态font-idconnectstatus-size3-colorred不支持font"></a> 连接状态：<font id="connectStatus" size="3" color="red">不支持</font></h3>
+<p><input id="buttonOpen" type="button" value="打开串口" onclick="docButtonOpen()"></input><br />
+<strong>接收缓冲区</strong><br />
+<textarea id="rxEditor" rows="8" cols="20"></textarea><br />
+<input type="button" value="清空" onclick="docButtonClr()"></input><br />
+<strong>发送缓冲区</strong><br />
+<textarea id="txEditor" rows="8" cols="20"></textarea><br />
+<input type="button" value="发送" onclick="docButtonSend()"></input></p>
+<script>
+
+    // 串口对象
+    var serialPortOpenedObj = null
+
+    // 串口数据读取器
+    var serialPortReader = null;
+
+    // 串口数据写入等待
+    var serialPortWritePromise = null;
+
+    // 串口等待关闭
+    var serialSerialClosedPromise = null;
+
+    // 初始化完成事件函数
+    document.addEventListener('DOMContentLoaded', () => {
+        docButtonOpenSet('打开串口', 'none')
+        if (serialCheckSupport()) {
+            docStatusSet('未连接')
+            docButtonOpenSet('打开串口', 'block')
+            self.setInterval("timer()", 1000);
+        }
+    })
+
+    // 循环发送串口
+    function timer() {
+        // if (serialPortOpenedObj) {
+        //     serialPortWritePromise = writeData('123')
+        // }
+        // cnt++
+        // docEditorAppend('rxEditor', 5000, false, 'ABCDEFG' + cnt)
+    }
+
+    // 设置文本的状态
+    function docStatusSet(status) {
+        document.getElementById('connectStatus').innerHTML = status
+    }
+
+    // 设置打开串口按钮的状态
+    function docButtonOpenSet(status, display) {
+        document.getElementById('buttonOpen').value = status
+        document.getElementById('buttonOpen').style.display = display
+    }
+
+    // 按下了打开串口
+    function docButtonOpen() {
+        if (document.getElementById('buttonOpen').value == '打开串口') {
+            serialOpen();
+        } else {
+            serialClose();
+        }
+    }
+
+    // 按下了清空
+    function docButtonClr() {
+        docEditorAppend('rxEditor', 0, false, '')
+    }
+
+    // 按下了发送
+    function docButtonSend() {
+        var ele = document.getElementById('txEditor');
+        if (ele.value.length == 0) {
+            return
+        }
+        writeString(ele.value)
+        console.log('[docButtonSend] ', ele.value)
+    }
+
+    // 向接收文本框附加数据
+    function docRxEditorAppend(data) {
+        var dataString = "";
+        for (var i = 0; i < data.length; i++) {
+            dataString += String.fromCharCode(data[i]);
+        }
+        
+        docEditorAppend('rxEditor', 5000, true, dataString)
+    }
+
+    // 向文本框附加字符串
+    function docEditorAppend(id, max, scroll, str) {
+        var ele = document.getElementById(id);
+        if (!ele) {
+            return
+        }
+        if (max == 0) {
+            ele.value = ''
+            return
+        }
+        if (!str || str.length == 0) {
+            return
+        }
+        if (max < str.length) {
+            max = str.length
+        }
+        if (ele.value.length >= max) {
+            ele.value = ele.value.slice(str.length, ele.value.length)
+        }
+        ele.value = ele.value + str;
+        if (scroll)
+            ele.scrollTop = ele.scrollHeight
+    }
+    
+    // 检查浏览器是否支持串口函数
+    function serialCheckSupport() {
+        if ('serial' in navigator) {
+            return true
+        }
+        return false
+    }
+
+    // 打开串口
+    async function serialOpen() {
+        if (!serialCheckSupport()) {
+            return
+        }
+        serialClose();
+        docStatusSet('请求用户操作')
+
+        const port = await navigator.serial.requestPort()
+
+        try {
+            await port.open({
+                baudRate: 115200, 
+                dataBits: 8, 
+                stopBits: 1,  
+                parity: 'none',
+                bufferSize: 2048,
+                flowControl: 'none'
+            })
+        } catch (error) {
+            alert('打开串口失败 ', error)
+            docStatusSet('未连接')
+            return
+        }
+        serialPortOpenedObj = port
+
+        serialSerialClosedPromise = readLoop();
+
+        docStatusSet('已连接')
+        docButtonOpenSet('关闭串口', 'block')
+    }
+
+    // 关闭串口
+    async function serialClose() {
+        if (serialPortReader) {
+            docStatusSet('等待关闭串口')
+            serialPortReader.cancel()
+        }
+        if (serialSerialClosedPromise) {
+            await serialSerialClosedPromise
+        }
+        serialSerialClosedPromise = null;
+    }
+
+    // 循环读取数据
+    async function readLoop() {
+        if (serialPortOpenedObj && serialPortOpenedObj.readable) {
+            serialPortReader = serialPortOpenedObj.readable.getReader()
+            console.log('[readLoop] START')
+            try {
+                while (true) {
+                    const { value, done } = await serialPortReader.read()
+                    if (done) {
+                        console.log('[readLoop] DONE ' + done)
+                        serialPortReader.releaseLock()
+                        break
+                    }
+                    if (value) {
+                        console.log('[readLoop] ' + value)
+                        docRxEditorAppend(value)
+                    }
+                }
+            } catch (error) {
+                console.log('[readLoop] ERROR', error)
+                serialPortReader.releaseLock()
+            }
+        }
+        if (serialPortWritePromise) {
+            await serialPortWritePromise
+        }
+        if (serialPortOpenedObj) {
+            await serialPortOpenedObj.close()
+        }
+        serialPortOpenedObj = null
+        serialPortReader = null
+        serialPortWritePromise = null
+        console.log('[readLoop] END')
+        docButtonOpenSet('打开串口', 'block')
+        docStatusSet('未连接')
+    }
+
+    // 写入字符串
+    async function writeString(str) {
+        var arr = [];
+        for (var i = 0, j = str.length; i < j; ++i) {
+            arr.push(str.charCodeAt(i));
+        }
+        
+        var tmpUint8Array = new Uint8Array(arr);
+        await writeData(tmpUint8Array)
+    }
+
+    // 写入8位数组
+    async function writeData(data) {
+        if (data == null) {
+            return
+        }
+        if (data.length == 0) {
+            return
+        }
+        if (serialPortOpenedObj && serialPortOpenedObj.writable) {
+            const writer = serialPortOpenedObj.writable.getWriter();
+            await writer.write(data);
+            writer.releaseLock();
+        }
+    }
+
+</script>
 
 
           <div class="row mt-2">
